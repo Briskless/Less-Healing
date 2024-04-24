@@ -8,8 +8,8 @@ namespace Less_Healing
 {
     public class GlobalSettings
     {
-        public bool benchHealing = false;
-        public bool focusHealing = false;
-        public bool retainHealth = false;
+        public bool benchHealing { get; set; } = false;
+        public bool focusHealing { get; set; } = false;
+        public bool retainHealth { get; set; } = false;
     }
 }

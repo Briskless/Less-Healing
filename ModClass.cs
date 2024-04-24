@@ -233,6 +233,7 @@ namespace Less_Healing
 
             Log("Health: "+PlayerData.instance.health);
 
+
         }
 
 
@@ -275,12 +276,8 @@ namespace Less_Healing
                 add = 0
             };
 
-
-            spellFsm.SendEvent("Set HP Amount");
-
             spellFsm.RemoveAction("Set HP Amount", 0);
             spellFsm.RemoveAction("Set HP Amount", 1);
-            spellFsm.RemoveAction("Set HP Amount", 2);
 
             spellFsm.AddAction("Set HP Amount", zeroAdd);   
         }
