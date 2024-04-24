@@ -19,8 +19,6 @@ namespace Less_Healing
     {
         internal static Less_Healing Instance;
 
-        //Credits (SFGrenade | Exempt-Medic)
-
         public Less_Healing() : base("Less Healing")
         {
             Instance = this;
@@ -297,7 +295,7 @@ namespace Less_Healing
         }
 
 
-        private void DisableBenchHealing(On.PlayerData.orig_MaxHealth orig, PlayerData self)
+        private void DisableBenchHealing(On.PlayerData.orig_MaxHealth orig, PlayerData self) // Logic via Exempt-Medic's NoBenchHealingNoStags mod
         {
             
             int currentHealth = self.health;
@@ -307,7 +305,7 @@ namespace Less_Healing
             {
                 self.health = currentHealth;
                 GameManager.instance.StartCoroutine(HealthUpdate());
-                //Log("At Bench");
+                
             }
         }
 
@@ -318,13 +316,14 @@ namespace Less_Healing
         }
 
 
+
         private void DisableFocusHealing(On.HeroController.orig_Start orig, HeroController self)
         {
             orig(self);
             EditFocusFSM(self);
         }
 
-        private void EditFocusFSM(HeroController self)
+        private void EditFocusFSM(HeroController self) // Based on logic found in SFGrenade's MoreHealing mod
         {
             var spellFsm = self.gameObject.LocateMyFSM("Spell Control");
             var spellFsmVar = spellFsm.FsmVariables;
