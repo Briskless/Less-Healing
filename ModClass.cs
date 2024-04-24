@@ -19,7 +19,7 @@ namespace Less_Healing
     {
         internal static Less_Healing Instance;
 
-        public Less_Healing() : base("Less Healing")
+        public Less_Healing() : base("LessHealing")
         {
             Instance = this;
         }
