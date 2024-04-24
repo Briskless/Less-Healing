@@ -183,30 +183,15 @@ namespace Less_Healing
             Log("retainHealth: " + GS.retainHealth);
             Log("hotspringHealing: " + GS.hotspringHealing);
 
-            ModHooks.AfterSavegameLoadHook += ConfigureHealthOptions;
+            On.HeroController.Awake += ConfigureHealthOptions;
 
             On.HeroController.Awake += UpdateGlobalSettings;
         }
 
-        private void UpdateGlobalSettings(On.HeroController.orig_Awake orig, HeroController self)
+        private void ConfigureHealthOptions(On.HeroController.orig_Awake orig, HeroController self)
         {
             orig(self);
 
-            Log("Updating Global Settings");
-
-            GS.benchHealing = this.benchHealing;
-            GS.focusHealing = this.focusHealing;
-            GS.retainHealth = this.retainHealth;
-            GS.hotspringHealing = this.hotspringHealing;
-
-            Log("benchHealing: "+GS.benchHealing);
-            Log("focusHealing: "+GS.focusHealing);
-            Log("retainHealth: "+GS.retainHealth);
-            Log("hotspringHealing: " + GS.hotspringHealing);
-        }
-
-        private void ConfigureHealthOptions(SaveGameData data)
-        {
             if (benchHealing == false && benchHealingSubscribed == false)
             {
                 Log("Removing BENCH HEALING");
@@ -258,8 +243,25 @@ namespace Less_Healing
                 Log("Enabling HOTSPRING HEALING");
                 On.PlayMakerFSM.Awake -= DisableHotspringHealing;
                 hotspringHealingSubscribed = false;
-                
+
             }
+        }
+
+        private void UpdateGlobalSettings(On.HeroController.orig_Awake orig, HeroController self)
+        {
+            orig(self);
+
+            Log("Updating Global Settings");
+
+            GS.benchHealing = this.benchHealing;
+            GS.focusHealing = this.focusHealing;
+            GS.retainHealth = this.retainHealth;
+            GS.hotspringHealing = this.hotspringHealing;
+
+            //Log("benchHealing: "+GS.benchHealing);
+            //Log("focusHealing: "+GS.focusHealing);
+            //Log("retainHealth: "+GS.retainHealth);
+            //Log("hotspringHealing: " + GS.hotspringHealing);
         }
 
         private void DisableHotspringHealing(On.PlayMakerFSM.orig_Awake orig, PlayMakerFSM self)
@@ -289,7 +291,7 @@ namespace Less_Healing
 
             orig(self);
 
-            Log("Health: "+PlayerData.instance.health);
+            //Log("Health: "+PlayerData.instance.health);
 
 
         }
