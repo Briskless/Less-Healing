@@ -50,11 +50,12 @@ namespace Less_Healing
         private bool benchHealing;
         private bool focusHealing;
         private bool retainHealth;
+        private bool hotspringHealing;
 
         private bool benchHealingSubscribed;
         private bool focusHealingSubscribed;
         private bool retainHealthSubscribed;
-
+        private bool hotspringHealingSubscribed;
 
 
         public bool ToggleButtonInsideMenu => throw new NotImplementedException();
@@ -131,6 +132,29 @@ namespace Less_Healing
                         true => 1,
                     }
 
+                },
+                new IMenuMod.MenuEntry
+                {
+                    Name = "Hotspring Heal:",
+                    Description = null,
+                    Values = new string[]
+                    {
+                        "Disabled",
+                        "Enabled"
+                    },
+                    Saver = opt => this.hotspringHealing = opt switch
+                    {
+                        0 => false,
+                        1 => true,
+
+                        _ => throw new InvalidOperationException()
+                    },
+                    Loader = () => this.hotspringHealing switch
+                    {
+                        false => 0,
+                        true => 1,
+                    }
+
                 }
             };
         }
@@ -147,14 +171,17 @@ namespace Less_Healing
             benchHealingSubscribed = false;
             focusHealingSubscribed = false;
             retainHealthSubscribed = false;
+            hotspringHealingSubscribed = false;
 
             benchHealing = GS.benchHealing;
             focusHealing = GS.focusHealing;
             retainHealth = GS.retainHealth;
+            hotspringHealing = GS.hotspringHealing;
 
             Log("benchHealing: " + GS.benchHealing);
             Log("focusHealing: " + GS.focusHealing);
             Log("retainHealth: " + GS.retainHealth);
+            Log("hotspringHealing: " + GS.hotspringHealing);
 
             ModHooks.AfterSavegameLoadHook += ConfigureHealthOptions;
 
@@ -163,17 +190,19 @@ namespace Less_Healing
 
         private void UpdateGlobalSettings(On.HeroController.orig_Awake orig, HeroController self)
         {
+            orig(self);
+
             Log("Updating Global Settings");
 
             GS.benchHealing = this.benchHealing;
             GS.focusHealing = this.focusHealing;
             GS.retainHealth = this.retainHealth;
+            GS.hotspringHealing = this.hotspringHealing;
 
             Log("benchHealing: "+GS.benchHealing);
             Log("focusHealing: "+GS.focusHealing);
             Log("retainHealth: "+GS.retainHealth);
-
-            orig(self);
+            Log("hotspringHealing: " + GS.hotspringHealing);
         }
 
         private void ConfigureHealthOptions(SaveGameData data)
@@ -217,7 +246,36 @@ namespace Less_Healing
                 On.HeroController.Awake += LoadPlayerHealth;
                 retainHealthSubscribed = true;
             }
+
+            if (hotspringHealing == false && hotspringHealingSubscribed == false)
+            {
+                Log("Removing HOTSPRING HEALING");
+                On.PlayMakerFSM.Awake += DisableHotspringHealing;
+                hotspringHealingSubscribed = true;
+            }
+            else
+            {
+                Log("Enabling HOTSPRING HEALING");
+                On.PlayMakerFSM.Awake -= DisableHotspringHealing;
+                hotspringHealingSubscribed = false;
+                
+            }
         }
+
+        private void DisableHotspringHealing(On.PlayMakerFSM.orig_Awake orig, PlayMakerFSM self)
+        {
+            //Log("Scene: " + self.gameObject.scene.name);
+            orig(self);
+
+            if (self.name == "Spa Region")
+            {
+                //Log("Removing Healing FSM");
+                self.RemoveAction("Heal", 3);
+            }
+
+            
+        }
+
 
         private void SavePlayerHealth(SaveGameData data)
         {
