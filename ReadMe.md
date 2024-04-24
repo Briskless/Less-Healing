@@ -1,6 +1,6 @@
 # LessHealing
 
-A mod that adds toggleable options that remove various healing methods from the game.
+A Hollow Knight mod that adds toggleable options that remove various healing methods from the game.
 
 ## Options include:
 -  **Bench healing**: The healing received when a player sits on a bench
