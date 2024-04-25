@@ -17,7 +17,7 @@ using System.Threading;
 namespace Less_Healing
 {
 
-    public class Less_Healing : Mod, IMenuMod, IGlobalSettings<GlobalSettings>
+    public class Less_Healing : Mod, IMenuMod, IGlobalSettings<GlobalSettings>, ILocalSettings<LocalData>
     {
         internal static Less_Healing Instance;
 
@@ -42,6 +42,16 @@ namespace Less_Healing
         {
             return GS;//return the local variable so it can be written in the json file
         }
+
+        public static LocalData saveData { get; set; } = new LocalData();
+        public void OnLoadLocal(LocalData s) => saveData = s;
+        public LocalData OnSaveLocal() => saveData;
+
+
+
+
+
+
 
         private bool debugLog = true;
 
