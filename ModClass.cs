@@ -47,6 +47,11 @@ namespace Less_Healing
 
         private bool playerAtBench;
         private int currentHealth;
+        private int lockedHealth;
+
+        private bool takeHealthFlag;
+        private System.DateTime epochStart;
+        private float healthFlagStart;
 
         private int maxHealthCounter;
 
@@ -171,6 +176,8 @@ namespace Less_Healing
             Instance = this;
 
             Log("Initialized");
+
+            epochStart = new System.DateTime(1970,1,1,0,0,0, System.DateTimeKind.Utc);
 
             configureHealthOptionsSubscribed = false;
             benchHealingSubscribed = false;
@@ -310,6 +317,8 @@ namespace Less_Healing
 
         private void RemoveFakeHealth()
         {
+            float currentTime = Time.time;
+
             if (HeroController.instance.playerData.atBench == false && playerAtBench == true)
             {
                 var data = HeroController.instance.playerData;
@@ -325,8 +334,16 @@ namespace Less_Healing
                     data.health = data.maxHealth;
                 }
 
+                takeHealthFlag = true;
+                healthFlagStart = currentTime;
+                
+            }
 
+            //Log("Time: " + (currentTime- healthFlagStart));
+            if (takeHealthFlag == true && currentTime - healthFlagStart >= 0.8)
+            {
                 HeroController.instance.TakeHealth(0);
+                takeHealthFlag = false;
             }
 
             playerAtBench = HeroController.instance.playerData.atBench;
