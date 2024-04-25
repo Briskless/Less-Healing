@@ -43,14 +43,13 @@ namespace Less_Healing
             return GS;//return the local variable so it can be written in the json file
         }
 
-
+        private bool debugLog = true;
 
         private bool playerAtBench;
+        private int prevHealth;
         private int currentHealth;
-        private int lockedHealth;
 
         private bool takeHealthFlag;
-        private System.DateTime epochStart;
         private float healthFlagStart;
 
         private int maxHealthCounter;
@@ -65,6 +64,9 @@ namespace Less_Healing
         private bool focusHealingSubscribed;
         private bool retainHealthSubscribed;
         private bool hotspringHealingSubscribed;
+
+
+        private bool isHeartEquipped;
 
 
         public bool ToggleButtonInsideMenu => throw new NotImplementedException();
@@ -168,6 +170,14 @@ namespace Less_Healing
             };
         }
 
+        
+        private void dLog(string message)
+        {
+            if (debugLog)
+            {
+                Log(message);
+            }
+        }
 
         public override void Initialize(Dictionary<string, Dictionary<string, GameObject>> preloadedObjects)
         {
@@ -176,8 +186,6 @@ namespace Less_Healing
             Instance = this;
 
             Log("Initialized");
-
-            epochStart = new System.DateTime(1970,1,1,0,0,0, System.DateTimeKind.Utc);
 
             configureHealthOptionsSubscribed = false;
             benchHealingSubscribed = false;
@@ -190,10 +198,10 @@ namespace Less_Healing
             retainHealth = GS.retainHealth;
             hotspringHealing = GS.hotspringHealing;
 
-            Log("benchHealing: " + GS.benchHealing);
-            Log("focusHealing: " + GS.focusHealing);
-            Log("retainHealth: " + GS.retainHealth);
-            Log("hotspringHealing: " + GS.hotspringHealing);
+            dLog("benchHealing: " + GS.benchHealing);
+            dLog("focusHealing: " + GS.focusHealing);
+            dLog("retainHealth: " + GS.retainHealth);
+            dLog("hotspringHealing: " + GS.hotspringHealing);
 
             On.HeroController.Awake += ConfigureHealthOptions;
 
@@ -214,6 +222,9 @@ namespace Less_Healing
             GS.retainHealth = this.retainHealth;
             GS.hotspringHealing = this.hotspringHealing;
 
+            currentHealth = self.playerData.health;
+            isHeartEquipped = true;
+
             //Log("benchHealing: "+GS.benchHealing);
             //Log("focusHealing: "+GS.focusHealing);
             //Log("retainHealth: "+GS.retainHealth);
@@ -222,25 +233,22 @@ namespace Less_Healing
 
         private void DebugFunction()
         {
-
-
-
             if (Input.GetKeyDown(KeyCode.G))
             {
-                Log("Taking HEALTH");
+                dLog("Taking HEALTH");
 
-                Log("Player health prev: " + HeroController.instance.playerData.health);
+                dLog("Player health prev: " + HeroController.instance.playerData.health);
                 HeroController.instance.TakeHealth(1);
-                Log("Player health after: " + HeroController.instance.playerData.health);
+                dLog("Player health after: " + HeroController.instance.playerData.health);
             }
 
             if (Input.GetKeyDown(KeyCode.H))
             {
-                Log("Adding HEALTH");
+                dLog("Adding HEALTH");
 
-                Log("Player health prev: " + HeroController.instance.playerData.health);
+                dLog("Player health prev: " + HeroController.instance.playerData.health);
                 HeroController.instance.AddHealth(1);
-                Log("Player health after: " + HeroController.instance.playerData.health);
+                dLog("Player health after: " + HeroController.instance.playerData.health);
             }
         }
 
@@ -254,16 +262,16 @@ namespace Less_Healing
                 {
                     Log("Removing BENCH HEALING");
                     On.PlayerData.MaxHealth += DisableBenchHealing;
-                    ModHooks.BeforeSavegameSaveHook += ResetMaxHealthCounter;
                     ModHooks.HeroUpdateHook += RemoveFakeHealth;
+                    ModHooks.CharmUpdateHook += MaxHealthCounterInterference;
                     benchHealingSubscribed = true;
                 }
                 else if (benchHealing == true && benchHealingSubscribed == true)
                 {
                     Log("Enabling BENCH HEALING");
                     On.PlayerData.MaxHealth -= DisableBenchHealing;
-                    ModHooks.BeforeSavegameSaveHook -= ResetMaxHealthCounter;
                     ModHooks.HeroUpdateHook -= RemoveFakeHealth;
+                    ModHooks.CharmUpdateHook -= MaxHealthCounterInterference;
                     benchHealingSubscribed = false;
                 }
 
@@ -315,15 +323,21 @@ namespace Less_Healing
 
         }
 
+
+
         private void RemoveFakeHealth()
         {
             float currentTime = Time.time;
 
             if (HeroController.instance.playerData.atBench == false && playerAtBench == true)
             {
+
+                dLog("Reset Counter");
+                maxHealthCounter = 0;
+
                 var data = HeroController.instance.playerData;
 
-                Log("Called");
+                dLog("Called");
 
                 if (currentHealth <= data.maxHealth)
                 {
@@ -366,12 +380,6 @@ namespace Less_Healing
         }
 
 
-        private void SavePlayerHealth(SaveGameData data)
-        {
-
-            PlayerData.instance.atBench = true; //Necessary so that health loading is not overwritten
-        }
-
         private void LoadPlayerHealth(On.HeroController.orig_Awake orig, HeroController self)
         {
             PlayerData.instance.atBench = true;
@@ -383,24 +391,37 @@ namespace Less_Healing
 
         }
 
-        private void ResetMaxHealthCounter(SaveGameData data)
+        private void MaxHealthCounterInterference(PlayerData data, HeroController controller)
         {
-            Log("Reset Counter");
-            maxHealthCounter = 0;
+            dLog("Charm Update Called");
+
+            dLog("Previous equippped: " + isHeartEquipped);
+            dLog("Currently equipped: " + data.equippedCharm_23);
+            if (maxHealthCounter == 1 && data.equippedCharm_23 && isHeartEquipped == false)
+            {
+                dLog("Reverting health to: " + prevHealth);
+                currentHealth = prevHealth;
+            }
+
+            isHeartEquipped = data.equippedCharm_23;
+        
         }
 
 
         private void DisableBenchHealing(On.PlayerData.orig_MaxHealth orig, PlayerData self)
         {
             maxHealthCounter++;
-            Log("Max Health Index: " + maxHealthCounter);
+            dLog("Max Health Index: " + maxHealthCounter);
 
 
             if (maxHealthCounter == 1)
             {
+                prevHealth = currentHealth;
                 currentHealth = self.health;
-                Log("Set current health to: " + currentHealth);
+                dLog("Set current health to: " + currentHealth);
             }
+
+            
 
             orig(self);
 
