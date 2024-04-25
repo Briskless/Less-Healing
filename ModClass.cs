@@ -337,6 +337,10 @@ namespace Less_Healing
 
 
 
+
+
+
+
         private void RemoveFakeHealth()
         {
             float currentTime = Time.time;
@@ -392,16 +396,7 @@ namespace Less_Healing
         }
 
 
-        private void LoadPlayerHealth(On.HeroController.orig_Awake orig, HeroController self)
-        {
-            PlayerData.instance.atBench = true;
 
-            orig(self);
-
-            //Log("Health: "+PlayerData.instance.health);
-
-
-        }
 
         private void MaxHealthCounterInterference(PlayerData data, HeroController controller)
         {
