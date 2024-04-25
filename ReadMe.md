@@ -8,4 +8,7 @@ A Hollow Knight mod that adds toggleable options that remove various healing met
 -  **Hotspring healing**: The healing received after a player remains within a hotspring for a time
 -  **Retain health**: The option to keep the same health after exiting a save when reentering the game (requires bench healing to be disabled for an effect)
 
-
+## Known issues:
+- Max Health **display** does not function correctly with this mod. Examples:
+    - Player current health may appear higher than it actually is
+    - Player max health may appear lower than it actually is 
