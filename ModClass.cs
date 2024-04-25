@@ -215,13 +215,13 @@ namespace Less_Healing
 
             On.HeroController.Awake += ConfigureHealthOptions;
 
-            On.HeroController.Awake += UpdateGlobalSettings;
+            On.HeroController.Awake += UpdateSettings;
 
             ModHooks.HeroUpdateHook += DebugFunction;
         }
 
 
-        private void UpdateGlobalSettings(On.HeroController.orig_Awake orig, HeroController self)
+        private void UpdateSettings(On.HeroController.orig_Awake orig, HeroController self)
         {
             orig(self);
 
@@ -231,6 +231,8 @@ namespace Less_Healing
             GS.focusHealing = this.focusHealing;
             GS.retainHealth = this.retainHealth;
             GS.hotspringHealing = this.hotspringHealing;
+
+            self.playerData.health = saveData.lastSavedHealth;
 
             currentHealth = self.playerData.health;
             isHeartEquipped = true;
