@@ -295,7 +295,7 @@ namespace Less_Healing
         }
 
 
-        private void DisableBenchHealing(On.PlayerData.orig_MaxHealth orig, PlayerData self) // Logic via Exempt-Medic's NoBenchHealingNoStags mod
+        private void DisableBenchHealing(On.PlayerData.orig_MaxHealth orig, PlayerData self)
         {
             
             int currentHealth = self.health;
@@ -303,7 +303,14 @@ namespace Less_Healing
 
             if (self.atBench)
             {
-                self.health = currentHealth;
+                if (currentHealth <= self.maxHealth)
+                {
+                    self.health = currentHealth;
+                }
+                else
+                {
+                    self.health = self.maxHealth;
+                }
                 GameManager.instance.StartCoroutine(HealthUpdate());
                 
             }
