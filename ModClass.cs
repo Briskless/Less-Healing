@@ -233,6 +233,7 @@ namespace Less_Healing
             GS.hotspringHealing = this.hotspringHealing;
 
             self.playerData.health = saveData.lastSavedHealth;
+            Log("Current HEALTH overwritten to: " + self.playerData.health);
 
             currentHealth = self.playerData.health;
             isHeartEquipped = true;
@@ -303,14 +304,15 @@ namespace Less_Healing
                 if (retainHealth == false && retainHealthSubscribed == true)
                 {
                     Log("Disabling RETAIN HEALTH");
-                    On.HeroController.Awake -= LoadPlayerHealth;
-                    PlayerData.instance.atBench = false; //Forces game to update player health
+                    ModHooks.BeforeSavegameSaveHook -= SaveLocalHealth;
+                    On.HeroController.Start += LoadLocalHealth;
                     retainHealthSubscribed = false;
                 }
                 else if (retainHealth == true && retainHealthSubscribed == false)
                 {
                     Log("Enabling RETAIN HEALTH");
-                    On.HeroController.Awake += LoadPlayerHealth;
+                    ModHooks.BeforeSavegameSaveHook += SaveLocalHealth;
+                    On.HeroController.Start += LoadLocalHealth;
                     retainHealthSubscribed = true;
                 }
 
@@ -335,11 +337,20 @@ namespace Less_Healing
 
         }
 
+        private void LoadLocalHealth(On.HeroController.orig_Start orig, HeroController self)
+        {
+            orig(self);
 
+            Log("Local HEALTH loaded to: " + currentHealth);
+            self.playerData.health = currentHealth;
 
+        }
 
-
-
+        private void SaveLocalHealth(SaveGameData data)
+        {
+            saveData.lastSavedHealth = currentHealth;
+            dLog("Local HEALTH saved as: " + saveData.lastSavedHealth);
+        }
 
         private void RemoveFakeHealth()
         {
@@ -348,12 +359,12 @@ namespace Less_Healing
             if (HeroController.instance.playerData.atBench == false && playerAtBench == true)
             {
 
-                dLog("Reset Counter");
+                //dLog("Reset Counter");
                 maxHealthCounter = 0;
 
                 var data = HeroController.instance.playerData;
 
-                dLog("Called");
+                //dLog("Called");
 
                 if (currentHealth <= data.maxHealth)
                 {
@@ -402,8 +413,8 @@ namespace Less_Healing
         {
             dLog("Charm Update Called");
 
-            dLog("Previous equippped: " + isHeartEquipped);
-            dLog("Currently equipped: " + data.equippedCharm_23);
+            //dLog("Previous equippped: " + isHeartEquipped);
+            //dLog("Currently equipped: " + data.equippedCharm_23);
             if (maxHealthCounter == 1 && data.equippedCharm_23 && isHeartEquipped == false)
             {
                 dLog("Reverting health to: " + prevHealth);
