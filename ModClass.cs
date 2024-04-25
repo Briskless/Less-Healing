@@ -11,6 +11,8 @@ using SFCore.Utils;
 using UnityEngine;
 using UObject = UnityEngine.Object;
 using HutongGames.PlayMaker.Actions;
+using GlobalEnums;
+using System.Threading;
 
 namespace Less_Healing
 {
@@ -41,19 +43,30 @@ namespace Less_Healing
             return GS;//return the local variable so it can be written in the json file
         }
 
+        private bool debugLog = true;
 
+        private bool playerAtBench;
+        private int prevHealth;
+        private int currentHealth;
 
+        private bool takeHealthFlag;
+        private float healthFlagStart;
 
+        private int maxHealthCounter;
 
         private bool benchHealing;
         private bool focusHealing;
         private bool retainHealth;
         private bool hotspringHealing;
 
+        private bool configureHealthOptionsSubscribed;
         private bool benchHealingSubscribed;
         private bool focusHealingSubscribed;
         private bool retainHealthSubscribed;
         private bool hotspringHealingSubscribed;
+
+
+        private bool isHeartEquipped;
 
 
         public bool ToggleButtonInsideMenu => throw new NotImplementedException();
@@ -157,6 +170,14 @@ namespace Less_Healing
             };
         }
 
+        
+        private void dLog(string message)
+        {
+            if (debugLog)
+            {
+                Log(message);
+            }
+        }
 
         public override void Initialize(Dictionary<string, Dictionary<string, GameObject>> preloadedObjects)
         {
@@ -166,6 +187,7 @@ namespace Less_Healing
 
             Log("Initialized");
 
+            configureHealthOptionsSubscribed = false;
             benchHealingSubscribed = false;
             focusHealingSubscribed = false;
             retainHealthSubscribed = false;
@@ -176,74 +198,18 @@ namespace Less_Healing
             retainHealth = GS.retainHealth;
             hotspringHealing = GS.hotspringHealing;
 
-            Log("benchHealing: " + GS.benchHealing);
-            Log("focusHealing: " + GS.focusHealing);
-            Log("retainHealth: " + GS.retainHealth);
-            Log("hotspringHealing: " + GS.hotspringHealing);
+            dLog("benchHealing: " + GS.benchHealing);
+            dLog("focusHealing: " + GS.focusHealing);
+            dLog("retainHealth: " + GS.retainHealth);
+            dLog("hotspringHealing: " + GS.hotspringHealing);
 
             On.HeroController.Awake += ConfigureHealthOptions;
 
             On.HeroController.Awake += UpdateGlobalSettings;
+
+            ModHooks.HeroUpdateHook += DebugFunction;
         }
 
-        private void ConfigureHealthOptions(On.HeroController.orig_Awake orig, HeroController self)
-        {
-            orig(self);
-
-            if (benchHealing == false && benchHealingSubscribed == false)
-            {
-                Log("Removing BENCH HEALING");
-                On.PlayerData.MaxHealth += DisableBenchHealing;
-                benchHealingSubscribed = true;
-            }
-            else if (benchHealing == true && benchHealingSubscribed == true)
-            {
-                Log("Enabling BENCH HEALING");
-                On.PlayerData.MaxHealth -= DisableBenchHealing;
-                benchHealingSubscribed = false;
-            }
-
-            if (focusHealing == false && focusHealingSubscribed == false)
-            {
-                Log("Removing FOCUS HEALING");
-                On.HeroController.Start += DisableFocusHealing;
-                focusHealingSubscribed = true;
-            }
-            else if (focusHealing == true && focusHealingSubscribed == true)
-            {
-                Log("Enabling FOCUS HEALING");
-                On.HeroController.Start -= DisableFocusHealing;
-                focusHealingSubscribed = false;
-            }
-
-            if (retainHealth == false && retainHealthSubscribed == true)
-            {
-                Log("Disabling RETAIN HEALTH");
-                On.HeroController.Awake -= LoadPlayerHealth;
-                PlayerData.instance.atBench = false; //Forces game to update player health
-                retainHealthSubscribed = false;
-            }
-            else if (retainHealth == true && retainHealthSubscribed == false)
-            {
-                Log("Enabling RETAIN HEALTH");
-                On.HeroController.Awake += LoadPlayerHealth;
-                retainHealthSubscribed = true;
-            }
-
-            if (hotspringHealing == false && hotspringHealingSubscribed == false)
-            {
-                Log("Removing HOTSPRING HEALING");
-                On.PlayMakerFSM.Awake += DisableHotspringHealing;
-                hotspringHealingSubscribed = true;
-            }
-            else
-            {
-                Log("Enabling HOTSPRING HEALING");
-                On.PlayMakerFSM.Awake -= DisableHotspringHealing;
-                hotspringHealingSubscribed = false;
-
-            }
-        }
 
         private void UpdateGlobalSettings(On.HeroController.orig_Awake orig, HeroController self)
         {
@@ -256,11 +222,148 @@ namespace Less_Healing
             GS.retainHealth = this.retainHealth;
             GS.hotspringHealing = this.hotspringHealing;
 
+            currentHealth = self.playerData.health;
+            isHeartEquipped = true;
+
             //Log("benchHealing: "+GS.benchHealing);
             //Log("focusHealing: "+GS.focusHealing);
             //Log("retainHealth: "+GS.retainHealth);
             //Log("hotspringHealing: " + GS.hotspringHealing);
         }
+
+        private void DebugFunction()
+        {
+            if (Input.GetKeyDown(KeyCode.G))
+            {
+                dLog("Taking HEALTH");
+
+                dLog("Player health prev: " + HeroController.instance.playerData.health);
+                HeroController.instance.TakeHealth(1);
+                dLog("Player health after: " + HeroController.instance.playerData.health);
+            }
+
+            if (Input.GetKeyDown(KeyCode.H))
+            {
+                dLog("Adding HEALTH");
+
+                dLog("Player health prev: " + HeroController.instance.playerData.health);
+                HeroController.instance.AddHealth(1);
+                dLog("Player health after: " + HeroController.instance.playerData.health);
+            }
+        }
+
+
+        private void ConfigureHealthOptions(On.HeroController.orig_Awake orig, HeroController self)
+        {
+            //Log("Configure Health Options : " + configureHealthOptionsSubscribed);
+            if (configureHealthOptionsSubscribed == false)
+            {
+                if (benchHealing == false && benchHealingSubscribed == false)
+                {
+                    Log("Removing BENCH HEALING");
+                    On.PlayerData.MaxHealth += DisableBenchHealing;
+                    ModHooks.HeroUpdateHook += RemoveFakeHealth;
+                    ModHooks.CharmUpdateHook += MaxHealthCounterInterference;
+                    benchHealingSubscribed = true;
+                }
+                else if (benchHealing == true && benchHealingSubscribed == true)
+                {
+                    Log("Enabling BENCH HEALING");
+                    On.PlayerData.MaxHealth -= DisableBenchHealing;
+                    ModHooks.HeroUpdateHook -= RemoveFakeHealth;
+                    ModHooks.CharmUpdateHook -= MaxHealthCounterInterference;
+                    benchHealingSubscribed = false;
+                }
+
+                if (focusHealing == false && focusHealingSubscribed == false)
+                {
+                    Log("Removing FOCUS HEALING");
+                    On.HeroController.Start += DisableFocusHealing;
+                    focusHealingSubscribed = true;
+                }
+                else if (focusHealing == true && focusHealingSubscribed == true)
+                {
+                    Log("Enabling FOCUS HEALING");
+                    On.HeroController.Start -= DisableFocusHealing;
+                    focusHealingSubscribed = false;
+                }
+
+                if (retainHealth == false && retainHealthSubscribed == true)
+                {
+                    Log("Disabling RETAIN HEALTH");
+                    On.HeroController.Awake -= LoadPlayerHealth;
+                    PlayerData.instance.atBench = false; //Forces game to update player health
+                    retainHealthSubscribed = false;
+                }
+                else if (retainHealth == true && retainHealthSubscribed == false)
+                {
+                    Log("Enabling RETAIN HEALTH");
+                    On.HeroController.Awake += LoadPlayerHealth;
+                    retainHealthSubscribed = true;
+                }
+
+                if (hotspringHealing == false && hotspringHealingSubscribed == false)
+                {
+                    Log("Removing HOTSPRING HEALING");
+                    On.PlayMakerFSM.Awake += DisableHotspringHealing;
+                    hotspringHealingSubscribed = true;
+                }
+                else
+                {
+                    Log("Enabling HOTSPRING HEALING");
+                    On.PlayMakerFSM.Awake -= DisableHotspringHealing;
+                    hotspringHealingSubscribed = false;
+
+                }
+                
+                configureHealthOptionsSubscribed = true;
+            }
+
+            orig(self);
+
+        }
+
+
+
+        private void RemoveFakeHealth()
+        {
+            float currentTime = Time.time;
+
+            if (HeroController.instance.playerData.atBench == false && playerAtBench == true)
+            {
+
+                dLog("Reset Counter");
+                maxHealthCounter = 0;
+
+                var data = HeroController.instance.playerData;
+
+                dLog("Called");
+
+                if (currentHealth <= data.maxHealth)
+                {
+                    data.health = currentHealth;
+                }
+                else
+                {
+                    data.health = data.maxHealth;
+                }
+
+                takeHealthFlag = true;
+                healthFlagStart = currentTime;
+                
+            }
+
+            //Log("Time: " + (currentTime- healthFlagStart));
+            if (takeHealthFlag == true && currentTime - healthFlagStart >= 0.8)
+            {
+                HeroController.instance.TakeHealth(0);
+                takeHealthFlag = false;
+            }
+
+            playerAtBench = HeroController.instance.playerData.atBench;
+        }
+
+
 
         private void DisableHotspringHealing(On.PlayMakerFSM.orig_Awake orig, PlayMakerFSM self)
         {
@@ -277,12 +380,6 @@ namespace Less_Healing
         }
 
 
-        private void SavePlayerHealth(SaveGameData data)
-        {
-
-            PlayerData.instance.atBench = true; //Necessary so that health loading is not overwritten
-        }
-
         private void LoadPlayerHealth(On.HeroController.orig_Awake orig, HeroController self)
         {
             PlayerData.instance.atBench = true;
@@ -294,43 +391,54 @@ namespace Less_Healing
 
         }
 
+        private void MaxHealthCounterInterference(PlayerData data, HeroController controller)
+        {
+            dLog("Charm Update Called");
+
+            dLog("Previous equippped: " + isHeartEquipped);
+            dLog("Currently equipped: " + data.equippedCharm_23);
+            if (maxHealthCounter == 1 && data.equippedCharm_23 && isHeartEquipped == false)
+            {
+                dLog("Reverting health to: " + prevHealth);
+                currentHealth = prevHealth;
+            }
+
+            isHeartEquipped = data.equippedCharm_23;
+        
+        }
+
 
         private void DisableBenchHealing(On.PlayerData.orig_MaxHealth orig, PlayerData self)
         {
+            maxHealthCounter++;
+            dLog("Max Health Index: " + maxHealthCounter);
+
+
+            if (maxHealthCounter == 1)
+            {
+                prevHealth = currentHealth;
+                currentHealth = self.health;
+                dLog("Set current health to: " + currentHealth);
+            }
+
             
-            int currentHealth = self.health;
+
             orig(self);
 
-            if (self.atBench)
-            {
-                if (currentHealth <= self.maxHealth)
-                {
-                    self.health = currentHealth;
-                }
-                else
-                {
-                    self.health = self.maxHealth;
-                }
-                GameManager.instance.StartCoroutine(HealthUpdate());
-                
-            }
         }
 
-        private IEnumerator HealthUpdate()
-        {
-            yield return new WaitForSeconds(0.01f);
-            PlayMakerFSM.BroadcastEvent("CHARM INDICATOR CHECK");
-        }
 
 
 
         private void DisableFocusHealing(On.HeroController.orig_Start orig, HeroController self)
         {
+            
+
             orig(self);
             EditFocusFSM(self);
         }
 
-        private void EditFocusFSM(HeroController self) // Based on logic found in SFGrenade's MoreHealing mod
+        private void EditFocusFSM(HeroController self)
         {
             var spellFsm = self.gameObject.LocateMyFSM("Spell Control");
             var spellFsmVar = spellFsm.FsmVariables;
