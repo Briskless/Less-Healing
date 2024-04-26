@@ -25,7 +25,7 @@ namespace Less_Healing
         {
             Instance = this;
         }
-        public override string GetVersion() => "v0.9.0";
+        public override string GetVersion() => "v1.0.0";
 
 
         
