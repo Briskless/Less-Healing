@@ -53,7 +53,7 @@ namespace Less_Healing
 
 
 
-        private bool debugLog = true;
+        private bool debugLog = false;
 
         private bool playerAtBench;
         private int prevHealth;
@@ -217,7 +217,7 @@ namespace Less_Healing
 
             On.HeroController.Awake += UpdateSettings;
 
-            ModHooks.HeroUpdateHook += DebugFunction;
+            //ModHooks.HeroUpdateHook += DebugFunction;
         }
 
 
