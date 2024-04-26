@@ -25,7 +25,7 @@ namespace Less_Healing
         {
             Instance = this;
         }
-        public override string GetVersion() => "v1.0.0";
+        public override string GetVersion() => "v1.0.1";
 
 
         
@@ -233,7 +233,7 @@ namespace Less_Healing
             GS.hotspringHealing = this.hotspringHealing;
 
             self.playerData.health = saveData.lastSavedHealth;
-            Log("Current HEALTH overwritten to: " + self.playerData.health);
+            //dLog("Current HEALTH overwritten to: " + self.playerData.health);
 
             currentHealth = self.playerData.health;
             isHeartEquipped = true;
@@ -381,7 +381,7 @@ namespace Less_Healing
             }
 
             //Log("Time: " + (currentTime- healthFlagStart));
-            if (takeHealthFlag == true && currentTime - healthFlagStart >= 0.8)
+            if (takeHealthFlag == true && currentTime - healthFlagStart >= 1.5)
             {
                 HeroController.instance.TakeHealth(0);
                 takeHealthFlag = false;
