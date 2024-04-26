@@ -49,12 +49,6 @@ namespace Less_Healing
 
 
 
-
-
-
-
-        private bool debugLog = false;
-
         private bool playerAtBench;
         private int prevHealth;
         private int currentHealth;
@@ -68,12 +62,14 @@ namespace Less_Healing
         private bool focusHealing;
         private bool retainHealth;
         private bool hotspringHealing;
+        private bool lifeblood;
 
         private bool configureHealthOptionsSubscribed;
         private bool benchHealingSubscribed;
         private bool focusHealingSubscribed;
         private bool retainHealthSubscribed;
         private bool hotspringHealingSubscribed;
+        private bool lifebloodSubscribed;
 
 
         private bool isHeartEquipped;
@@ -176,17 +172,31 @@ namespace Less_Healing
                         true => 1,
                     }
 
+                },
+                new IMenuMod.MenuEntry
+                {
+                    Name = "Lifeblood:",
+                    Description = null,
+                    Values = new string[]
+                    {
+                        "Disabled",
+                        "Enabled"
+                    },
+                    Saver = opt => this.lifeblood = opt switch
+                    {
+                        0 => false,
+                        1 => true,
+
+                        _ => throw new InvalidOperationException()
+                    },
+                    Loader = () => this.lifeblood switch
+                    {
+                        false => 0,
+                        true => 1,
+                    }
+
                 }
             };
-        }
-
-        
-        private void dLog(string message)
-        {
-            if (debugLog)
-            {
-                Log(message);
-            }
         }
 
         public override void Initialize(Dictionary<string, Dictionary<string, GameObject>> preloadedObjects)
@@ -202,16 +212,13 @@ namespace Less_Healing
             focusHealingSubscribed = false;
             retainHealthSubscribed = false;
             hotspringHealingSubscribed = false;
+            lifebloodSubscribed = false;
 
             benchHealing = GS.benchHealing;
             focusHealing = GS.focusHealing;
             retainHealth = GS.retainHealth;
             hotspringHealing = GS.hotspringHealing;
-
-            //dLog("benchHealing: " + GS.benchHealing);
-            //dLog("focusHealing: " + GS.focusHealing);
-            //dLog("retainHealth: " + GS.retainHealth);
-            //dLog("hotspringHealing: " + GS.hotspringHealing);
+            lifeblood = GS.lifeblood;
 
             On.HeroController.Awake += ConfigureHealthOptions;
 
@@ -231,44 +238,38 @@ namespace Less_Healing
             GS.focusHealing = this.focusHealing;
             GS.retainHealth = this.retainHealth;
             GS.hotspringHealing = this.hotspringHealing;
+            GS.lifeblood = this.lifeblood;
 
             self.playerData.health = saveData.lastSavedHealth;
-            //dLog("Current HEALTH overwritten to: " + self.playerData.health);
 
             currentHealth = self.playerData.health;
             isHeartEquipped = true;
-
-            //Log("benchHealing: "+GS.benchHealing);
-            //Log("focusHealing: "+GS.focusHealing);
-            //Log("retainHealth: "+GS.retainHealth);
-            //Log("hotspringHealing: " + GS.hotspringHealing);
         }
 
         private void DebugFunction()
         {
             if (Input.GetKeyDown(KeyCode.G))
             {
-                //dLog("Taking HEALTH");
+                Log("Taking HEALTH");
 
-                //dLog("Player health prev: " + HeroController.instance.playerData.health);
+                Log("Player health prev: " + HeroController.instance.playerData.health);
                 HeroController.instance.TakeHealth(1);
-                //dLog("Player health after: " + HeroController.instance.playerData.health);
+                Log("Player health after: " + HeroController.instance.playerData.health);
             }
 
             if (Input.GetKeyDown(KeyCode.H))
             {
-                //dLog("Adding HEALTH");
+                Log("Adding HEALTH");
 
-                //dLog("Player health prev: " + HeroController.instance.playerData.health);
+                Log("Player health prev: " + HeroController.instance.playerData.health);
                 HeroController.instance.AddHealth(1);
-                //dLog("Player health after: " + HeroController.instance.playerData.health);
+                Log("Player health after: " + HeroController.instance.playerData.health);
             }
         }
 
 
         private void ConfigureHealthOptions(On.HeroController.orig_Awake orig, HeroController self)
         {
-            //Log("Configure Health Options : " + configureHealthOptionsSubscribed);
             if (configureHealthOptionsSubscribed == false)
             {
                 if (benchHealing == false && benchHealingSubscribed == false)
@@ -322,13 +323,26 @@ namespace Less_Healing
                     On.PlayMakerFSM.Awake += DisableHotspringHealing;
                     hotspringHealingSubscribed = true;
                 }
-                else
+                else if (hotspringHealing == true && hotspringHealingSubscribed == true)
                 {
                     Log("Enabling HOTSPRING HEALING");
                     On.PlayMakerFSM.Awake -= DisableHotspringHealing;
                     hotspringHealingSubscribed = false;
-
                 }
+
+                if (lifeblood == false && lifebloodSubscribed == false)
+                {
+                    Log("Disabling LIFEBLOOD");
+                    ModHooks.HeroUpdateHook += DisablingLifeblood;
+                    lifebloodSubscribed = true;
+                }
+                else if (lifeblood == true && lifebloodSubscribed == true)
+                {
+                    Log("Enabling LIFEBLOOD");
+                    ModHooks.HeroUpdateHook -= DisablingLifeblood;
+                    lifebloodSubscribed = false;
+                }
+
                 
                 configureHealthOptionsSubscribed = true;
             }
@@ -337,11 +351,17 @@ namespace Less_Healing
 
         }
 
+        private void DisablingLifeblood()
+        {
+            var playerData = HeroController.instance.playerData;
+            playerData.healthBlue = 0;
+            playerData.joniHealthBlue = 0;
+        }
+
         private void LoadLocalHealth(On.HeroController.orig_Start orig, HeroController self)
         {
             orig(self);
 
-            //Log("Local HEALTH loaded to: " + currentHealth);
             self.playerData.health = currentHealth;
 
         }
@@ -349,7 +369,6 @@ namespace Less_Healing
         private void SaveLocalHealth(SaveGameData data)
         {
             saveData.lastSavedHealth = currentHealth;
-            //dLog("Local HEALTH saved as: " + saveData.lastSavedHealth);
         }
 
         private void RemoveFakeHealth()
@@ -359,12 +378,10 @@ namespace Less_Healing
             if (HeroController.instance.playerData.atBench == false && playerAtBench == true)
             {
 
-                //dLog("Reset Counter");
                 maxHealthCounter = 0;
 
                 var data = HeroController.instance.playerData;
 
-                //dLog("Called");
 
                 if (currentHealth <= data.maxHealth)
                 {
@@ -380,7 +397,6 @@ namespace Less_Healing
                 
             }
 
-            //Log("Time: " + (currentTime- healthFlagStart));
             if (HeroController.instance.playerData.maxHealth <= 5)
             {
                 TakeFakeHealth(currentTime, 0.7);
@@ -412,7 +428,6 @@ namespace Less_Healing
 
         private void DisableHotspringHealing(On.PlayMakerFSM.orig_Awake orig, PlayMakerFSM self)
         {
-            //Log("Scene: " + self.gameObject.scene.name);
             orig(self);
 
             if (self.name == "Spa Region")
@@ -429,13 +444,8 @@ namespace Less_Healing
 
         private void MaxHealthCounterInterference(PlayerData data, HeroController controller)
         {
-            dLog("Charm Update Called");
-
-            //dLog("Previous equippped: " + isHeartEquipped);
-            //dLog("Currently equipped: " + data.equippedCharm_23);
             if (maxHealthCounter == 1 && data.equippedCharm_23 && isHeartEquipped == false)
             {
-                dLog("Reverting health to: " + prevHealth);
                 currentHealth = prevHealth;
             }
 
@@ -447,14 +457,13 @@ namespace Less_Healing
         private void DisableBenchHealing(On.PlayerData.orig_MaxHealth orig, PlayerData self)
         {
             maxHealthCounter++;
-            dLog("Max Health Index: " + maxHealthCounter);
+            //Log("Max Health Index: " + maxHealthCounter);
 
 
             if (maxHealthCounter == 1)
             {
                 prevHealth = currentHealth;
                 currentHealth = self.health;
-                dLog("Set current health to: " + currentHealth);
             }
 
             
