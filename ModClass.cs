@@ -381,13 +381,31 @@ namespace Less_Healing
             }
 
             //Log("Time: " + (currentTime- healthFlagStart));
-            if (takeHealthFlag == true && currentTime - healthFlagStart >= 1.5)
+            if (HeroController.instance.playerData.maxHealth <= 5)
+            {
+                TakeFakeHealth(currentTime, 0.7);
+            }
+            else if (HeroController.instance.playerData.maxHealth <= 8)
+            {
+                TakeFakeHealth(currentTime, 0.9);
+            }
+            else if (HeroController.instance.playerData.maxHealth <= 11)
+            {
+                TakeFakeHealth(currentTime, 1.5);
+            }
+
+
+            playerAtBench = HeroController.instance.playerData.atBench;
+        }
+
+
+        private void TakeFakeHealth(float currentTime, double duration)
+        {
+            if (takeHealthFlag == true && currentTime - healthFlagStart >= duration)
             {
                 HeroController.instance.TakeHealth(0);
                 takeHealthFlag = false;
             }
-
-            playerAtBench = HeroController.instance.playerData.atBench;
         }
 
 
