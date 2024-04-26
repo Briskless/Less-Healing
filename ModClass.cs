@@ -208,10 +208,10 @@ namespace Less_Healing
             retainHealth = GS.retainHealth;
             hotspringHealing = GS.hotspringHealing;
 
-            dLog("benchHealing: " + GS.benchHealing);
-            dLog("focusHealing: " + GS.focusHealing);
-            dLog("retainHealth: " + GS.retainHealth);
-            dLog("hotspringHealing: " + GS.hotspringHealing);
+            //dLog("benchHealing: " + GS.benchHealing);
+            //dLog("focusHealing: " + GS.focusHealing);
+            //dLog("retainHealth: " + GS.retainHealth);
+            //dLog("hotspringHealing: " + GS.hotspringHealing);
 
             On.HeroController.Awake += ConfigureHealthOptions;
 
@@ -248,20 +248,20 @@ namespace Less_Healing
         {
             if (Input.GetKeyDown(KeyCode.G))
             {
-                dLog("Taking HEALTH");
+                //dLog("Taking HEALTH");
 
-                dLog("Player health prev: " + HeroController.instance.playerData.health);
+                //dLog("Player health prev: " + HeroController.instance.playerData.health);
                 HeroController.instance.TakeHealth(1);
-                dLog("Player health after: " + HeroController.instance.playerData.health);
+                //dLog("Player health after: " + HeroController.instance.playerData.health);
             }
 
             if (Input.GetKeyDown(KeyCode.H))
             {
-                dLog("Adding HEALTH");
+                //dLog("Adding HEALTH");
 
-                dLog("Player health prev: " + HeroController.instance.playerData.health);
+                //dLog("Player health prev: " + HeroController.instance.playerData.health);
                 HeroController.instance.AddHealth(1);
-                dLog("Player health after: " + HeroController.instance.playerData.health);
+                //dLog("Player health after: " + HeroController.instance.playerData.health);
             }
         }
 
@@ -341,7 +341,7 @@ namespace Less_Healing
         {
             orig(self);
 
-            Log("Local HEALTH loaded to: " + currentHealth);
+            //Log("Local HEALTH loaded to: " + currentHealth);
             self.playerData.health = currentHealth;
 
         }
@@ -349,7 +349,7 @@ namespace Less_Healing
         private void SaveLocalHealth(SaveGameData data)
         {
             saveData.lastSavedHealth = currentHealth;
-            dLog("Local HEALTH saved as: " + saveData.lastSavedHealth);
+            //dLog("Local HEALTH saved as: " + saveData.lastSavedHealth);
         }
 
         private void RemoveFakeHealth()
