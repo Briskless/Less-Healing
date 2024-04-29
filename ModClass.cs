@@ -306,7 +306,7 @@ namespace Less_Healing
             var hero = HeroController.instance;
             float currentTime = Time.time;
 
-            DebugCommands(hero);
+            //DebugCommands(hero);
 
 
             if (!hero.playerData.atBench && !playerAtBench) // Current health updater
