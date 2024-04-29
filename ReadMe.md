@@ -7,4 +7,4 @@ A Hollow Knight mod that adds toggleable options that remove various healing met
 -  **Focus healing**: The healing received after a player successfully completes a focus
 -  **Hotspring healing**: The healing received after a player remains within a hotspring for a time
 -  **Retain health**: The option to keep the same health after exiting a save when reentering the game (requires bench healing to be disabled for an effect)
--  **Lifeblood**: Dictates whether lifeblood will removed or kept when reveived from cocoons or charms 
+-  **Lifeblood**: Dictates whether lifeblood will be removed or kept when received from cocoons or charms 
