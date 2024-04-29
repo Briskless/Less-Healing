@@ -365,7 +365,7 @@ namespace Less_Healing
 
         private void UpdateHealthHud(HeroController hero, float currentTime, float healthFlagStart, float delay)
         {
-            if (healthFlag && (currentTime - healthFlagStart) >= delay)
+            if (!hero.controlReqlinquished && healthFlag && (currentTime - healthFlagStart) >= delay)
             {
                 hero.TakeHealth(0);
                 healthFlag = false;
